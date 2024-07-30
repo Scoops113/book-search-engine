@@ -17,9 +17,7 @@ const server = new ApolloServer({
 
 const startServer = async () => {
   try {
-   
-    const MONGODB_URI = 'mongodb+srv://user:vsyly40YLYomMGuB@cluster0.ln9p6bm.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0';
-
+    const MONGODB_URI = process.env.MONGODB_URI || 'mongodb+srv://user:vsyly40YLYomMGuB@cluster0.ln9p6bm.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0';
     await mongoose.connect(MONGODB_URI, {
       useNewUrlParser: true,
       useUnifiedTopology: true,
@@ -33,9 +31,11 @@ const startServer = async () => {
     app.use(express.json());
 
     if (process.env.NODE_ENV === 'production') {
-      app.use(express.static(path.join(__dirname, '../client/build')));
+      const distPath = path.join(__dirname, '../client/dist');
+      app.use(express.static(distPath));
+      
       app.get('*', (req, res) => {
-        res.sendFile(path.join(__dirname, '../client/build', 'index.html'));
+        res.sendFile(path.resolve(distPath, 'index.html'));
       });
     }
 
