@@ -1,9 +1,11 @@
+require('dotenv').config(); 
 const express = require('express');
 const path = require('path');
-const db = require('./config/connection');
+const mongoose = require('mongoose'); 
 const { ApolloServer } = require('apollo-server-express');
 const { typeDefs, resolvers } = require('./schemas');
 const { authMiddleware } = require('./utils/auth');
+
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -17,27 +19,38 @@ const server = new ApolloServer({
 
 
 const startServer = async () => {
-  await server.start(); 
-  server.applyMiddleware({ app }); 
+  try {
+    
+    await mongoose.connect(process.env.MONGODB_URI, {
+      useNewUrlParser: true,
+      useUnifiedTopology: true,
+    });
+    console.log('Connected to MongoDB Atlas');
 
-  
-  app.use(express.urlencoded({ extended: true }));
-  app.use(express.json());
+    
+    await server.start();
+    server.applyMiddleware({ app });
 
-  if (process.env.NODE_ENV === 'production') {
-    app.use(express.static(path.join(__dirname, '../client/build')));
-  }
+    
+    app.use(express.urlencoded({ extended: true }));
+    app.use(express.json());
 
- 
-  db.once('open', () => {
+    if (process.env.NODE_ENV === 'production') {
+      app.use(express.static(path.join(__dirname, '../client/build')));
+    }
+
+    
     app.listen(PORT, () => {
       console.log(`🌍 Now listening on http://localhost:${PORT}`);
       console.log(`🚀 GraphQL server ready at http://localhost:${PORT}${server.graphqlPath}`);
     });
-  });
+
+  } catch (error) {
+    console.error('Error connecting to MongoDB Atlas', error);
+  }
 };
+
 
 startServer().catch(err => {
   console.error('Error starting the server', err);
 });
-
